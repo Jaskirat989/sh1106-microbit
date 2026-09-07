@@ -1,0 +1,24 @@
+{
+    "name": "sh1106-extension",
+    "version": "0.0.0",
+    "description": "SH1106 OLED driver for micro:bit",
+    "dependencies": {
+        "core": "*",
+        "radio": "*",
+        "microphone": "*"
+    },
+    "files": [
+        "README.md",
+        "main.blocks",
+        "main.ts"
+    ],
+    "testFiles": [
+        "test.ts"
+    ],
+    "public": true,
+    "supportedTargets": [
+        "microbit"
+    ],
+    "preferredEditor": "blocksprj",
+    "license": "MIT"
+}

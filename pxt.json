@@ -1,0 +1,17 @@
+{
+    "name": "sh1106-extension",
+    "version": "0.0.1",
+    "description": "SH1106 OLED driver for micro:bit",
+    "license": "MIT",
+    "dependencies": {
+        "core": "*",
+        "microphone": "*"
+    },
+    "files": [
+        "main.ts"
+    ],
+    "public": true,
+    "supportedTargets": [
+        "microbit"
+    ]
+}
