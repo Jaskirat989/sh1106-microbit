@@ -74,7 +74,12 @@ namespace SH1106 {
     let buffer = pins.createBuffer(1024)
     let initialized = false
 
-    function setPixelInternal(x: number, y: number, on: boolean): void {
+    function setPixelInternal(
+        x: number,
+        y: number,
+        on: boolean
+    ): void {
+
         if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
             return
         }
@@ -89,7 +94,11 @@ namespace SH1106 {
         }
     }
 
-    function getPixel(x: number, y: number): boolean {
+    function getPixel(
+        x: number,
+        y: number
+    ): boolean {
+
         if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) {
             return false
         }
@@ -101,20 +110,24 @@ namespace SH1106 {
     }
 
     function sendBuffer(): void {
+
         for (let page = 0; page < 8; page++) {
 
             setPosition(page, 0)
 
-            for (let chunk = 0; chunk < 8; chunk++) {
+            let pageBuffer = pins.createBuffer(WIDTH + 1)
 
-                let data: number[] = []
+            pageBuffer[0] = 0x40
 
-                for (let x = 0; x < 16; x++) {
-                    data.push(buffer[page * WIDTH + chunk * 16 + x])
-                }
-
-                writeData(data)
+            for (let x = 0; x < WIDTH; x++) {
+                pageBuffer[x + 1] =
+                    buffer[page * WIDTH + x]
             }
+
+            pins.i2cWriteBuffer(
+                ADDRESS,
+                pageBuffer
+            )
         }
     }
 
@@ -128,8 +141,11 @@ namespace SH1106 {
     //% block="initialize SH1106 OLED"
     //% weight=100
     export function initialize(): void {
+
         initDisplay()
+
         clear()
+
         initialized = true
     }
 
@@ -163,6 +179,7 @@ namespace SH1106 {
     //% block="update SH1106 OLED"
     //% weight=90
     export function update(): void {
+
         sendBuffer()
     }
 
@@ -177,8 +194,16 @@ namespace SH1106 {
     //% x.min=0 x.max=127
     //% y.min=0 y.max=63
     //% weight=85
-    export function drawPixel(x: number, y: number): void {
-        setPixelInternal(x, y, true)
+    export function drawPixel(
+        x: number,
+        y: number
+    ): void {
+
+        setPixelInternal(
+            x,
+            y,
+            true
+        )
     }
 
     /**
@@ -188,8 +213,16 @@ namespace SH1106 {
     //% x.min=0 x.max=127
     //% y.min=0 y.max=63
     //% weight=84
-    export function erasePixel(x: number, y: number): void {
-        setPixelInternal(x, y, false)
+    export function erasePixel(
+        x: number,
+        y: number
+    ): void {
+
+        setPixelInternal(
+            x,
+            y,
+            false
+        )
     }
 
     // ------------------------------------------------------------
@@ -218,9 +251,16 @@ namespace SH1106 {
 
         while (true) {
 
-            setPixelInternal(x1, y1, true)
+            setPixelInternal(
+                x1,
+                y1,
+                true
+            )
 
-            if (x1 == x2 && y1 == y2) {
+            if (
+                x1 == x2 &&
+                y1 == y2
+            ) {
                 break
             }
 
@@ -254,10 +294,37 @@ namespace SH1106 {
         height: number
     ): void {
 
-        drawLine(x, y, x + width - 1, y)
-        drawLine(x, y, x, y + height - 1)
-        drawLine(x + width - 1, y, x + width - 1, y + height - 1)
-        drawLine(x, y + height - 1, x + width - 1, y + height - 1)
+        if (width <= 0 || height <= 0) {
+            return
+        }
+
+        drawLine(
+            x,
+            y,
+            x + width - 1,
+            y
+        )
+
+        drawLine(
+            x,
+            y,
+            x,
+            y + height - 1
+        )
+
+        drawLine(
+            x + width - 1,
+            y,
+            x + width - 1,
+            y + height - 1
+        )
+
+        drawLine(
+            x,
+            y + height - 1,
+            x + width - 1,
+            y + height - 1
+        )
     }
 
     // ------------------------------------------------------------
@@ -276,9 +343,310 @@ namespace SH1106 {
         height: number
     ): void {
 
-        for (let yy = y; yy < y + height; yy++) {
-            for (let xx = x; xx < x + width; xx++) {
-                setPixelInternal(xx, yy, true)
+        if (width <= 0 || height <= 0) {
+            return
+        }
+
+        for (
+            let yy = y;
+            yy < y + height;
+            yy++
+        ) {
+
+            for (
+                let xx = x;
+                xx < x + width;
+                xx++
+            ) {
+
+                setPixelInternal(
+                    xx,
+                    yy,
+                    true
+                )
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // CIRCLE
+    // ------------------------------------------------------------
+
+    /**
+     * Draw an outline circle.
+     */
+    //% block="draw circle center x %x center y %y radius %radius"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% radius.min=1 radius.max=63
+    //% weight=68
+    export function drawCircle(
+        x: number,
+        y: number,
+        radius: number
+    ): void {
+
+        if (radius < 1) {
+            return
+        }
+
+        let px = radius
+        let py = 0
+        let decision = 1 - radius
+
+        while (px >= py) {
+
+            setPixelInternal(
+                x + px,
+                y + py,
+                true
+            )
+
+            setPixelInternal(
+                x + py,
+                y + px,
+                true
+            )
+
+            setPixelInternal(
+                x - py,
+                y + px,
+                true
+            )
+
+            setPixelInternal(
+                x - px,
+                y + py,
+                true
+            )
+
+            setPixelInternal(
+                x - px,
+                y - py,
+                true
+            )
+
+            setPixelInternal(
+                x - py,
+                y - px,
+                true
+            )
+
+            setPixelInternal(
+                x + py,
+                y - px,
+                true
+            )
+
+            setPixelInternal(
+                x + px,
+                y - py,
+                true
+            )
+
+            py++
+
+            if (decision <= 0) {
+
+                decision =
+                    decision +
+                    2 * py +
+                    1
+
+            } else {
+
+                px--
+
+                decision =
+                    decision +
+                    2 * (py - px) +
+                    1
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // FILLED CIRCLE
+    // ------------------------------------------------------------
+
+    /**
+     * Draw a filled circle.
+     */
+    //% block="fill circle center x %x center y %y radius %radius"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% radius.min=1 radius.max=63
+    //% weight=67
+    export function fillCircle(
+        x: number,
+        y: number,
+        radius: number
+    ): void {
+
+        if (radius < 1) {
+            return
+        }
+
+        for (
+            let yy = -radius;
+            yy <= radius;
+            yy++
+        ) {
+
+            let inside =
+                radius * radius -
+                yy * yy
+
+            let xx =
+                Math.sqrt(inside)
+
+            drawLine(
+                x - xx,
+                y + yy,
+                x + xx,
+                y + yy
+            )
+        }
+    }
+
+    // ------------------------------------------------------------
+    // TRIANGLE
+    // ------------------------------------------------------------
+
+    /**
+     * Draw a triangle.
+     */
+    //% block="draw triangle x1 %x1 y1 %y1 x2 %x2 y2 %y2 x3 %x3 y3 %y3"
+    //% weight=66
+    export function drawTriangle(
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        x3: number,
+        y3: number
+    ): void {
+
+        drawLine(
+            x1,
+            y1,
+            x2,
+            y2
+        )
+
+        drawLine(
+            x2,
+            y2,
+            x3,
+            y3
+        )
+
+        drawLine(
+            x3,
+            y3,
+            x1,
+            y1
+        )
+    }
+
+    // ------------------------------------------------------------
+    // FILLED TRIANGLE
+    // ------------------------------------------------------------
+
+    /**
+     * Draw a filled triangle.
+     */
+    //% block="fill triangle x1 %x1 y1 %y1 x2 %x2 y2 %y2 x3 %x3 y3 %y3"
+    //% weight=65
+    export function fillTriangle(
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        x3: number,
+        y3: number
+    ): void {
+
+        let minY = Math.min(
+            y1,
+            Math.min(y2, y3)
+        )
+
+        let maxY = Math.max(
+            y1,
+            Math.max(y2, y3)
+        )
+
+        for (
+            let y = minY;
+            y <= maxY;
+            y++
+        ) {
+
+            let intersections: number[] = []
+
+            if (
+                (y1 <= y && y < y2) ||
+                (y2 <= y && y < y1)
+            ) {
+
+                let x =
+                    x1 +
+                    (y - y1) *
+                    (x2 - x1) /
+                    (y2 - y1)
+
+                intersections.push(x)
+            }
+
+            if (
+                (y2 <= y && y < y3) ||
+                (y3 <= y && y < y2)
+            ) {
+
+                let x =
+                    x2 +
+                    (y - y2) *
+                    (x3 - x2) /
+                    (y3 - y2)
+
+                intersections.push(x)
+            }
+
+            if (
+                (y3 <= y && y < y1) ||
+                (y1 <= y && y < y3)
+            ) {
+
+                let x =
+                    x3 +
+                    (y - y3) *
+                    (x1 - x3) /
+                    (y1 - y3)
+
+                intersections.push(x)
+            }
+
+            if (intersections.length >= 2) {
+
+                let left =
+                    Math.min(
+                        intersections[0],
+                        intersections[1]
+                    )
+
+                let right =
+                    Math.max(
+                        intersections[0],
+                        intersections[1]
+                    )
+
+                drawLine(
+                    left,
+                    y,
+                    right,
+                    y
+                )
             }
         }
     }
@@ -288,6 +656,8 @@ namespace SH1106 {
     // ------------------------------------------------------------
 
     function glyph(character: string): number[] {
+
+        // ---------------- Uppercase A-Z ----------------
 
         if (character == "A")
             return [0x7E, 0x11, 0x11, 0x11, 0x7E]
@@ -367,28 +737,402 @@ namespace SH1106 {
         if (character == "Z")
             return [0x61, 0x51, 0x49, 0x45, 0x43]
 
+        // ---------------- Lowercase a-z ----------------
+
         if (character == "a")
             return [0x20, 0x54, 0x54, 0x54, 0x78]
 
-        if (character == "e")
-            return [0x38, 0x54, 0x54, 0x54, 0x18]
+        if (character == "b")
+            return [0x7F, 0x48, 0x44, 0x44, 0x38]
 
-        if (character == "l")
-            return [0x00, 0x41, 0x7F, 0x40, 0x00]
-
-        if (character == "o")
-            return [0x38, 0x44, 0x44, 0x44, 0x38]
-
-        if (character == "r")
-            return [0x7C, 0x08, 0x04, 0x04, 0x08]
+        if (character == "c")
+            return [0x38, 0x44, 0x44, 0x44, 0x20]
 
         if (character == "d")
             return [0x38, 0x44, 0x44, 0x48, 0x7F]
 
+        if (character == "e")
+            return [0x38, 0x54, 0x54, 0x54, 0x18]
+
+        if (character == "f")
+            return [0x08, 0x7E, 0x09, 0x01, 0x02]
+
+        if (character == "g")
+            return [0x0C, 0x52, 0x52, 0x52, 0x3E]
+
+        if (character == "h")
+            return [0x7F, 0x08, 0x04, 0x04, 0x78]
+
+        if (character == "i")
+            return [0x00, 0x44, 0x7D, 0x40, 0x00]
+
+        if (character == "j")
+            return [0x20, 0x40, 0x44, 0x3D, 0x00]
+
+        if (character == "k")
+            return [0x7F, 0x10, 0x28, 0x44, 0x00]
+
+        if (character == "l")
+            return [0x00, 0x41, 0x7F, 0x40, 0x00]
+
+        if (character == "m")
+            return [0x7C, 0x04, 0x18, 0x04, 0x78]
+
+        if (character == "n")
+            return [0x7C, 0x08, 0x04, 0x04, 0x78]
+
+        if (character == "o")
+            return [0x38, 0x44, 0x44, 0x44, 0x38]
+
+        if (character == "p")
+            return [0x7F, 0x09, 0x09, 0x09, 0x06]
+
+        if (character == "q")
+            return [0x06, 0x09, 0x09, 0x08, 0x7F]
+
+        if (character == "r")
+            return [0x7C, 0x08, 0x04, 0x04, 0x08]
+
+        if (character == "s")
+            return [0x48, 0x54, 0x54, 0x54, 0x24]
+
+        if (character == "t")
+            return [0x04, 0x3F, 0x44, 0x40, 0x20]
+
+        if (character == "u")
+            return [0x3C, 0x40, 0x40, 0x20, 0x7C]
+
+        if (character == "v")
+            return [0x1C, 0x20, 0x40, 0x20, 0x1C]
+
+        if (character == "w")
+            return [0x3C, 0x40, 0x30, 0x40, 0x3C]
+
+        if (character == "x")
+            return [0x44, 0x28, 0x10, 0x28, 0x44]
+
+        if (character == "y")
+            return [0x0C, 0x50, 0x50, 0x50, 0x3C]
+
+        if (character == "z")
+            return [0x44, 0x64, 0x54, 0x4C, 0x44]
+
+        // ---------------- Digits 0-9 ----------------
+
+        if (character == "0")
+            return [0x3E, 0x51, 0x49, 0x45, 0x3E]
+
+        if (character == "1")
+            return [0x00, 0x42, 0x7F, 0x40, 0x00]
+
+        if (character == "2")
+            return [0x42, 0x61, 0x51, 0x49, 0x46]
+
+        if (character == "3")
+            return [0x21, 0x41, 0x45, 0x4B, 0x31]
+
+        if (character == "4")
+            return [0x18, 0x14, 0x12, 0x7F, 0x10]
+
+        if (character == "5")
+            return [0x27, 0x45, 0x45, 0x45, 0x39]
+
+        if (character == "6")
+            return [0x3C, 0x4A, 0x49, 0x49, 0x30]
+
+        if (character == "7")
+            return [0x01, 0x71, 0x09, 0x05, 0x03]
+
+        if (character == "8")
+            return [0x36, 0x49, 0x49, 0x49, 0x36]
+
+        if (character == "9")
+            return [0x06, 0x49, 0x49, 0x29, 0x1E]
+
+        // ---------------- Punctuation ----------------
+
         if (character == " ")
             return [0x00, 0x00, 0x00, 0x00, 0x00]
 
-        return [0, 0, 0, 0, 0]
+        if (character == ".")
+            return [0x00, 0x60, 0x60, 0x00, 0x00]
+
+        if (character == ",")
+            return [0x00, 0x80, 0x60, 0x00, 0x00]
+
+        if (character == "!")
+            return [0x00, 0x00, 0x5F, 0x00, 0x00]
+
+        if (character == "?")
+            return [0x02, 0x01, 0x51, 0x09, 0x06]
+
+        if (character == ":")
+            return [0x00, 0x36, 0x36, 0x00, 0x00]
+
+        if (character == "-")
+            return [0x08, 0x08, 0x08, 0x08, 0x08]
+
+        if (character == "_")
+            return [0x40, 0x40, 0x40, 0x40, 0x40]
+
+        if (character == "/")
+            return [0x20, 0x10, 0x08, 0x04, 0x02]
+
+        if (character == "%")
+            return [0x23, 0x13, 0x08, 0x64, 0x62]
+
+        if (character == "@")
+            return [0x3E, 0x41, 0x5D, 0x55, 0x1E]
+
+        if (character == "#")
+            return [0x14, 0x7F, 0x14, 0x7F, 0x14]
+
+        if (character == "$")
+            return [0x24, 0x2A, 0x7F, 0x2A, 0x12]
+
+        if (character == "^")
+            return [0x04, 0x02, 0x01, 0x02, 0x04]
+
+        if (character == "&")
+            return [0x36, 0x49, 0x56, 0x20, 0x50]
+
+        if (character == "*")
+            return [0x14, 0x08, 0x3E, 0x08, 0x14]
+
+        if (character == "(")
+            return [0x00, 0x1C, 0x22, 0x41, 0x00]
+
+        if (character == ")")
+            return [0x00, 0x41, 0x22, 0x1C, 0x00]
+
+        if (character == "+")
+            return [0x08, 0x08, 0x3E, 0x08, 0x08]
+
+        if (character == "=")
+            return [0x14, 0x14, 0x14, 0x14, 0x14]
+
+        if (character == "~")
+            return [0x02, 0x01, 0x02, 0x04, 0x02]
+
+        // ---------------- Unknown character fallback ----------------
+
+        return [
+            0x7F,
+            0x41,
+            0x41,
+            0x41,
+            0x7F
+        ]
+    }
+
+    // ------------------------------------------------------------
+    // ICONS
+    // ------------------------------------------------------------
+
+    /**
+     * Built-in 8x8 icons for showIcon.
+     */
+    export enum Icons {
+
+        //% block="heart"
+        Heart,
+
+        //% block="small heart"
+        SmallHeart,
+
+        //% block="happy"
+        Happy,
+
+        //% block="sad"
+        Sad,
+
+        //% block="yes"
+        Yes,
+
+        //% block="no"
+        No,
+
+        //% block="arrow up"
+        ArrowUp,
+
+        //% block="arrow down"
+        ArrowDown,
+
+        //% block="target"
+        Target,
+
+        //% block="square"
+        Square
+    }
+
+    function iconBitmap(
+        icon: Icons
+    ): number[] {
+
+        if (icon == Icons.Heart)
+            return [
+                0b01100110,
+                0b11111111,
+                0b11111111,
+                0b11111111,
+                0b01111110,
+                0b00111100,
+                0b00011000,
+                0b00000000
+            ]
+
+        if (icon == Icons.SmallHeart)
+            return [
+                0b00000000,
+                0b01100110,
+                0b11111111,
+                0b11111111,
+                0b01111110,
+                0b00111100,
+                0b00011000,
+                0b00000000
+            ]
+
+        if (icon == Icons.Happy)
+            return [
+                0b00111100,
+                0b01000010,
+                0b10100101,
+                0b10000001,
+                0b10100101,
+                0b10011001,
+                0b01000010,
+                0b00111100
+            ]
+
+        if (icon == Icons.Sad)
+            return [
+                0b00111100,
+                0b01000010,
+                0b10100101,
+                0b10000001,
+                0b10011001,
+                0b10100101,
+                0b01000010,
+                0b00111100
+            ]
+
+        if (icon == Icons.Yes)
+            return [
+                0b00000000,
+                0b00000001,
+                0b00000010,
+                0b00000100,
+                0b10001000,
+                0b01010000,
+                0b00100000,
+                0b00000000
+            ]
+
+        if (icon == Icons.No)
+            return [
+                0b10000001,
+                0b01000010,
+                0b00100100,
+                0b00011000,
+                0b00011000,
+                0b00100100,
+                0b01000010,
+                0b10000001
+            ]
+
+        if (icon == Icons.ArrowUp)
+            return [
+                0b00011000,
+                0b00111100,
+                0b01111110,
+                0b11011011,
+                0b00011000,
+                0b00011000,
+                0b00011000,
+                0b00011000
+            ]
+
+        if (icon == Icons.ArrowDown)
+            return [
+                0b00011000,
+                0b00011000,
+                0b00011000,
+                0b00011000,
+                0b11011011,
+                0b01111110,
+                0b00111100,
+                0b00011000
+            ]
+
+        if (icon == Icons.Target)
+            return [
+                0b00111100,
+                0b01000010,
+                0b10011001,
+                0b10100101,
+                0b10100101,
+                0b10011001,
+                0b01000010,
+                0b00111100
+            ]
+
+        return [
+            0b11111111,
+            0b10000001,
+            0b10000001,
+            0b10000001,
+            0b10000001,
+            0b10000001,
+            0b10000001,
+            0b11111111
+        ]
+    }
+
+    /**
+     * Draw a built-in 8x8 icon.
+     */
+    //% block="show icon %icon at x %x y %y"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=60
+    export function showIcon(
+        icon: Icons,
+        x: number,
+        y: number
+    ): void {
+
+        let bitmap =
+            iconBitmap(icon)
+
+        for (
+            let row = 0;
+            row < 8;
+            row++
+        ) {
+
+            let rowData =
+                bitmap[row]
+
+            for (
+                let col = 0;
+                col < 8;
+                col++
+            ) {
+
+                if (
+                    (rowData &
+                        (0x80 >> col)) != 0
+                ) {
+
+                    setPixelInternal(
+                        x + col,
+                        y + row,
+                        true
+                    )
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------
@@ -399,25 +1143,45 @@ namespace SH1106 {
      * Draw text using the built-in 5x7 font.
      */
     //% block="show text %text at x %x y %y"
-    //% weight=60
+    //% weight=55
     export function showText(
         text: string,
         x: number,
         y: number
     ): void {
 
-        for (let i = 0; i < text.length; i++) {
+        for (
+            let i = 0;
+            i < text.length;
+            i++
+        ) {
 
-            let character = text.charAt(i)
-            let data = glyph(character)
+            let character =
+                text.charAt(i)
 
-            for (let column = 0; column < 5; column++) {
+            let data =
+                glyph(character)
 
-                let columnData = data[column]
+            for (
+                let column = 0;
+                column < 5;
+                column++
+            ) {
 
-                for (let bit = 0; bit < 7; bit++) {
+                let columnData =
+                    data[column]
 
-                    if ((columnData & (1 << bit)) != 0) {
+                for (
+                    let bit = 0;
+                    bit < 7;
+                    bit++
+                ) {
+
+                    if (
+                        (columnData &
+                            (1 << bit)) != 0
+                    ) {
+
                         setPixelInternal(
                             x + i * 6 + column,
                             y + bit,
@@ -427,5 +1191,234 @@ namespace SH1106 {
                 }
             }
         }
+    }
+
+    // ------------------------------------------------------------
+    // ANIMATION SYSTEM
+    // ------------------------------------------------------------
+
+    /*
+     * Four 128x64 frames are used by default.
+     *
+     * 4 frames = 4096 bytes of frame storage.
+     * If your micro:bit has enough free RAM, you can
+     * increase MAX_FRAMES later.
+     */
+
+    const MAX_FRAMES = 4
+
+    let animationFrames: Buffer[] = []
+
+    let animationRunning = false
+
+    let animationDelay = 200
+
+    let animationFrameNumber = 0
+
+    // ------------------------------------------------------------
+    // CLEAR ANIMATION FRAMES
+    // ------------------------------------------------------------
+
+    /**
+     * Delete all saved animation frames.
+     */
+    //% block="clear animation frames"
+    //% weight=50
+    export function clearAnimationFrames(): void {
+
+        animationFrames = []
+
+        animationFrameNumber = 0
+    }
+
+    // ------------------------------------------------------------
+    // SAVE ANIMATION FRAME
+    // ------------------------------------------------------------
+
+    /**
+     * Save the current screen buffer as a frame.
+     *
+     * Draw something first, then use this block
+     * to save it as an animation frame.
+     */
+    //% block="animation frame"
+    //% weight=49
+    export function animationFrame(): void {
+
+        if (
+            animationFrames.length >=
+            MAX_FRAMES
+        ) {
+            return
+        }
+
+        let frame =
+            pins.createBuffer(1024)
+
+        for (
+            let i = 0;
+            i < 1024;
+            i++
+        ) {
+
+            frame[i] =
+                buffer[i]
+        }
+
+        animationFrames.push(frame)
+    }
+
+    // ------------------------------------------------------------
+    // SHOW CURRENT FRAME
+    // ------------------------------------------------------------
+
+    /**
+     * Show the current animation frame.
+     */
+    //% block="show frame"
+    //% weight=48
+    export function showFrame(): void {
+
+        if (
+            animationFrameNumber < 0 ||
+            animationFrameNumber >=
+            animationFrames.length
+        ) {
+            return
+        }
+
+        let frame =
+            animationFrames[
+                animationFrameNumber
+            ]
+
+        for (
+            let i = 0;
+            i < 1024;
+            i++
+        ) {
+
+            buffer[i] =
+                frame[i]
+        }
+
+        sendBuffer()
+    }
+
+    // ------------------------------------------------------------
+    // ANIMATION DELAY
+    // ------------------------------------------------------------
+
+    /**
+     * Set the delay between animation frames.
+     */
+    //% block="animation delay %milliseconds ms"
+    //% milliseconds.min=20 milliseconds.max=5000
+    //% weight=47
+    export function animationDelayMs(
+        milliseconds: number
+    ): void {
+
+        if (milliseconds < 20) {
+            milliseconds = 20
+        }
+
+        if (milliseconds > 5000) {
+            milliseconds = 5000
+        }
+
+        animationDelay =
+            milliseconds
+    }
+
+    // ------------------------------------------------------------
+    // START ANIMATION
+    // ------------------------------------------------------------
+
+    /**
+     * Start playing the saved animation.
+     */
+    //% block="start animation"
+    //% weight=46
+    export function startAnimation(): void {
+
+        if (animationRunning) {
+            return
+        }
+
+        if (animationFrames.length == 0) {
+            return
+        }
+
+        animationRunning = true
+
+        control.inBackground(() => {
+
+            while (animationRunning) {
+
+                if (
+                    animationFrames.length == 0
+                ) {
+
+                    animationRunning =
+                        false
+
+                    break
+                }
+
+                if (
+                    animationFrameNumber >=
+                    animationFrames.length
+                ) {
+
+                    animationFrameNumber = 0
+                }
+
+                let frame =
+                    animationFrames[
+                        animationFrameNumber
+                    ]
+
+                for (
+                    let i = 0;
+                    i < 1024;
+                    i++
+                ) {
+
+                    buffer[i] =
+                        frame[i]
+                }
+
+                sendBuffer()
+
+                animationFrameNumber++
+
+                if (
+                    animationFrameNumber >=
+                    animationFrames.length
+                ) {
+
+                    animationFrameNumber = 0
+                }
+
+                basic.pause(
+                    animationDelay
+                )
+            }
+        })
+    }
+
+    // ------------------------------------------------------------
+    // STOP ANIMATION
+    // ------------------------------------------------------------
+
+    /**
+     * Stop animation playback.
+     */
+    //% block="stop animation"
+    //% weight=45
+    export function stopAnimation(): void {
+
+        animationRunning = false
     }
 }
