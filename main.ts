@@ -1422,3 +1422,542 @@ namespace SH1106 {
         animationRunning = false
     }
 }
+    // ============================================================
+    // ICONS + BUILT-IN ANIMATIONS
+    // ============================================================
+
+    // ------------------------------------------------------------
+    // ICON SIZE
+    // ------------------------------------------------------------
+
+    export enum IconSize {
+        //% block="tiny 8x8"
+        Tiny = 8,
+
+        //% block="small 16x16"
+        Small = 16,
+
+        //% block="medium 24x24"
+        Medium = 24,
+
+        //% block="large 32x32"
+        Large = 32
+    }
+
+    // ------------------------------------------------------------
+    // BASIC ICON DRAWING
+    // ------------------------------------------------------------
+
+    function drawIconPixel(x: number, y: number, scale: number): void {
+        for (let yy = 0; yy < scale; yy++) {
+            for (let xx = 0; xx < scale; xx++) {
+                setPixelInternal(x + xx, y + yy, true)
+            }
+        }
+    }
+
+    function drawIconPattern(
+        pattern: string[],
+        x: number,
+        y: number,
+        scale: number
+    ): void {
+
+        for (let row = 0; row < pattern.length; row++) {
+            let line = pattern[row]
+
+            for (let col = 0; col < line.length; col++) {
+                if (line.charAt(col) == "#") {
+                    drawIconPixel(
+                        x + col * scale,
+                        y + row * scale,
+                        scale
+                    )
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------------------------
+    // ICON PATTERNS
+    // ------------------------------------------------------------
+
+    const HAPPY_ICON = [
+        "  ####  ",
+        " #    # ",
+        "#      #",
+        "# #  # #",
+        "#      #",
+        "# #  # #",
+        " # #### ",
+        "  ####  "
+    ]
+
+    const SAD_ICON = [
+        "  ####  ",
+        " #    # ",
+        "#      #",
+        "# #  # #",
+        "#      #",
+        "# #### #",
+        " #    # ",
+        "  ####  "
+    ]
+
+    const ANGRY_ICON = [
+        "  ####  ",
+        " #    # ",
+        "#      #",
+        "##    ##",
+        "# #  # #",
+        "#      #",
+        " # ## # ",
+        "  ####  "
+    ]
+
+    const NO_ICON = [
+        "##    ##",
+        "###  ###",
+        " #######",
+        "  ##### ",
+        "  ##### ",
+        " #######",
+        "###  ###",
+        "##    ##"
+    ]
+
+    const YES_ICON = [
+        "       #",
+        "      ##",
+        "     ## ",
+        "    ##  ",
+        "#  ##   ",
+        "###     ",
+        " ##     ",
+        "  #     "
+    ]
+
+    const HEART_ICON = [
+        " ##  ## ",
+        "########",
+        "########",
+        " ########",
+        "  ######",
+        "   #### ",
+        "    ##  ",
+        "        "
+    ]
+
+    const THERMOMETER_ICON = [
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "   ##   ",
+        "  ####  ",
+        " ###### ",
+        "  ####  "
+    ]
+
+    const SNOWFLAKE_ICON = [
+        "#   #   ",
+        " # #    ",
+        "  ###   ",
+        "########",
+        "  ###   ",
+        " # #    ",
+        "#   #   "
+    ]
+
+    const CLOUD_ICON = [
+        "         ",
+        "   ###   ",
+        "  #####  ",
+        " ########",
+        "#########",
+        " ########",
+        "         "
+    ]
+
+    // ------------------------------------------------------------
+    // SHOW ICON
+    // ------------------------------------------------------------
+
+    //% block="show icon %icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=20
+    export function showIcon(
+        icon: number,
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+
+        let pattern: string[] = []
+
+        if (icon == 0) {
+            pattern = HAPPY_ICON
+        } else if (icon == 1) {
+            pattern = SAD_ICON
+        } else if (icon == 2) {
+            pattern = ANGRY_ICON
+        } else if (icon == 3) {
+            pattern = NO_ICON
+        } else if (icon == 4) {
+            pattern = YES_ICON
+        } else if (icon == 5) {
+            pattern = HEART_ICON
+        } else if (icon == 6) {
+            pattern = THERMOMETER_ICON
+        } else if (icon == 7) {
+            pattern = SNOWFLAKE_ICON
+        } else if (icon == 8) {
+            pattern = CLOUD_ICON
+        } else {
+            return
+        }
+
+        let scale = 1
+
+        if (size == IconSize.Tiny) {
+            scale = 1
+        } else if (size == IconSize.Small) {
+            scale = 2
+        } else if (size == IconSize.Medium) {
+            scale = 3
+        } else {
+            scale = 4
+        }
+
+        drawIconPattern(pattern, x, y, scale)
+        sendBuffer()
+    }
+
+    // ------------------------------------------------------------
+    // SIMPLE ICON BLOCKS
+    // ------------------------------------------------------------
+
+    //% block="happy icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=19
+    export function happyIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(0, x, y, size)
+    }
+
+    //% block="sad icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=18
+    export function sadIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(1, x, y, size)
+    }
+
+    //% block="angry icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=17
+    export function angryIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(2, x, y, size)
+    }
+
+    //% block="NO icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=16
+    export function noIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(3, x, y, size)
+    }
+
+    //% block="YES icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=15
+    export function yesIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(4, x, y, size)
+    }
+
+    //% block="heart icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=14
+    export function heartIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(5, x, y, size)
+    }
+
+    //% block="thermometer icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=13
+    export function thermometerIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(6, x, y, size)
+    }
+
+    //% block="snowflake icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=12
+    export function snowflakeIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(7, x, y, size)
+    }
+
+    //% block="cloud icon at x %x y %y size %size"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=11
+    export function cloudIcon(
+        x: number,
+        y: number,
+        size: IconSize
+    ): void {
+        showIcon(8, x, y, size)
+    }
+
+    // ============================================================
+    // ANIMATION SYSTEM
+    // ============================================================
+
+    const MAX_FRAMES = 4
+
+    let animationFrames: Buffer[] = []
+    let animationRunning = false
+    let animationDelay = 200
+    let animationFrameNumber = 0
+
+    //% block="clear animation frames"
+    //% weight=10
+    export function clearAnimationFrames(): void {
+        animationFrames = []
+        animationFrameNumber = 0
+    }
+
+    //% block="save animation frame"
+    //% weight=9
+    export function animationFrame(): void {
+
+        if (animationFrames.length >= MAX_FRAMES) {
+            return
+        }
+
+        let frame = pins.createBuffer(1024)
+
+        for (let i = 0; i < 1024; i++) {
+            frame[i] = buffer[i]
+        }
+
+        animationFrames.push(frame)
+    }
+
+    //% block="show saved frame"
+    //% weight=8
+    export function showFrame(): void {
+
+        if (animationFrames.length == 0) {
+            return
+        }
+
+        if (animationFrameNumber >= animationFrames.length) {
+            animationFrameNumber = 0
+        }
+
+        let frame = animationFrames[animationFrameNumber]
+
+        for (let i = 0; i < 1024; i++) {
+            buffer[i] = frame[i]
+        }
+
+        sendBuffer()
+    }
+
+    //% block="animation delay %milliseconds ms"
+    //% milliseconds.min=20 milliseconds.max=3000
+    //% weight=7
+    export function animationDelayMs(milliseconds: number): void {
+
+        if (milliseconds < 20) {
+            milliseconds = 20
+        }
+
+        if (milliseconds > 3000) {
+            milliseconds = 3000
+        }
+
+        animationDelay = milliseconds
+    }
+
+    //% block="start animation"
+    //% weight=6
+    export function startAnimation(): void {
+
+        if (animationRunning) {
+            return
+        }
+
+        if (animationFrames.length == 0) {
+            return
+        }
+
+        animationRunning = true
+
+        control.inBackground(() => {
+
+            while (animationRunning) {
+
+                if (animationFrames.length == 0) {
+                    animationRunning = false
+                    break
+                }
+
+                if (animationFrameNumber >= animationFrames.length) {
+                    animationFrameNumber = 0
+                }
+
+                let frame = animationFrames[animationFrameNumber]
+
+                for (let i = 0; i < 1024; i++) {
+                    buffer[i] = frame[i]
+                }
+
+                sendBuffer()
+
+                animationFrameNumber++
+
+                if (animationFrameNumber >= animationFrames.length) {
+                    animationFrameNumber = 0
+                }
+
+                basic.pause(animationDelay)
+            }
+        })
+    }
+
+    //% block="stop animation"
+    //% weight=5
+    export function stopAnimation(): void {
+        animationRunning = false
+    }
+
+    // ============================================================
+    // RAINFALL ANIMATION
+    // ============================================================
+
+    //% block="show rainfall"
+    //% weight=4
+    export function showRainfall(): void {
+
+        clear()
+
+        // cloud
+        drawIconPattern(CLOUD_ICON, 55, 0, 2)
+
+        // rain drops
+        for (let x = 10; x < 125; x += 18) {
+            let y = Math.randomRange(20, 55)
+            drawLine(x, y, x - 1, y + 5)
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // SNOWFALL ANIMATION
+    // ============================================================
+
+    //% block="show snowfall"
+    //% weight=3
+    export function showSnowfall(): void {
+
+        clear()
+
+        for (let i = 0; i < 14; i++) {
+
+            let x = Math.randomRange(2, 125)
+            let y = Math.randomRange(2, 61)
+
+            drawPixel(x, y)
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // ANGRY MAN
+    // ============================================================
+
+    //% block="show angry man"
+    //% weight=2
+    export function showAngryMan(): void {
+
+        clear()
+
+        // head
+        drawRectangle(48, 15, 30, 25)
+
+        // angry eyes
+        drawLine(53, 21, 61, 25)
+        drawLine(69, 25, 77, 21)
+
+        // angry mouth
+        drawLine(57, 33, 69, 33)
+        drawLine(69, 33, 73, 30)
+
+        // nose
+        drawLine(64, 25, 64, 30)
+
+        // body
+        drawRectangle(54, 40, 18, 18)
+
+        // air from nose
+        drawLine(78, 27, 86, 27)
+        drawLine(86, 27, 91, 24)
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // HEART BEAT
+    // ============================================================
+
+    //% block="show big heart"
+    //% weight=1
+    export function showBigHeart(): void {
+
+        clear()
+
+        drawIconPattern(HEART_ICON, 48, 20, 4)
+
+        sendBuffer()
+    }
