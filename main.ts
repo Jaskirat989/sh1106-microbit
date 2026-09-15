@@ -1961,3 +1961,4 @@ namespace SH1106 {
 
         sendBuffer()
     }
+}
