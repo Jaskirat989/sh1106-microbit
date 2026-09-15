@@ -396,53 +396,14 @@ namespace SH1106 {
 
         while (px >= py) {
 
-            setPixelInternal(
-                x + px,
-                y + py,
-                true
-            )
-
-            setPixelInternal(
-                x + py,
-                y + px,
-                true
-            )
-
-            setPixelInternal(
-                x - py,
-                y + px,
-                true
-            )
-
-            setPixelInternal(
-                x - px,
-                y + py,
-                true
-            )
-
-            setPixelInternal(
-                x - px,
-                y - py,
-                true
-            )
-
-            setPixelInternal(
-                x - py,
-                y - px,
-                true
-            )
-
-            setPixelInternal(
-                x + py,
-                y - px,
-                true
-            )
-
-            setPixelInternal(
-                x + px,
-                y - py,
-                true
-            )
+            setPixelInternal(x + px, y + py, true)
+            setPixelInternal(x + py, y + px, true)
+            setPixelInternal(x - py, y + px, true)
+            setPixelInternal(x - px, y + py, true)
+            setPixelInternal(x - px, y - py, true)
+            setPixelInternal(x - py, y - px, true)
+            setPixelInternal(x + py, y - px, true)
+            setPixelInternal(x + px, y - py, true)
 
             py++
 
@@ -527,26 +488,9 @@ namespace SH1106 {
         y3: number
     ): void {
 
-        drawLine(
-            x1,
-            y1,
-            x2,
-            y2
-        )
-
-        drawLine(
-            x2,
-            y2,
-            x3,
-            y3
-        )
-
-        drawLine(
-            x3,
-            y3,
-            x1,
-            y1
-        )
+        drawLine(x1, y1, x2, y2)
+        drawLine(x2, y2, x3, y3)
+        drawLine(x3, y3, x1, y1)
     }
 
     // ------------------------------------------------------------
@@ -914,8 +858,6 @@ namespace SH1106 {
         if (character == "~")
             return [0x02, 0x01, 0x02, 0x04, 0x02]
 
-        // ---------------- Unknown character fallback ----------------
-
         return [
             0x7F,
             0x41,
@@ -926,11 +868,11 @@ namespace SH1106 {
     }
 
     // ------------------------------------------------------------
-    // ICONS
+    // ORIGINAL BUILT-IN ICONS
     // ------------------------------------------------------------
 
     /**
-     * Built-in 8x8 icons for showIcon.
+     * Built-in 8x8 icons.
      */
     export enum Icons {
 
@@ -1197,14 +1139,6 @@ namespace SH1106 {
     // ANIMATION SYSTEM
     // ------------------------------------------------------------
 
-    /*
-     * Four 128x64 frames are used by default.
-     *
-     * 4 frames = 4096 bytes of frame storage.
-     * If your micro:bit has enough free RAM, you can
-     * increase MAX_FRAMES later.
-     */
-
     const MAX_FRAMES = 4
 
     let animationFrames: Buffer[] = []
@@ -1237,9 +1171,6 @@ namespace SH1106 {
 
     /**
      * Save the current screen buffer as a frame.
-     *
-     * Draw something first, then use this block
-     * to save it as an animation frame.
      */
     //% block="animation frame"
     //% weight=49
@@ -1421,16 +1352,13 @@ namespace SH1106 {
 
         animationRunning = false
     }
-}
-    // ============================================================
-    // ICONS + BUILT-IN ANIMATIONS
-    // ============================================================
 
-    // ------------------------------------------------------------
-    // ICON SIZE
-    // ------------------------------------------------------------
+    // ============================================================
+    // SCALED ICONS
+    // ============================================================
 
     export enum IconSize {
+
         //% block="tiny 8x8"
         Tiny = 8,
 
@@ -1445,13 +1373,24 @@ namespace SH1106 {
     }
 
     // ------------------------------------------------------------
-    // BASIC ICON DRAWING
+    // ICON PATTERN DRAWING
     // ------------------------------------------------------------
 
-    function drawIconPixel(x: number, y: number, scale: number): void {
+    function drawIconPixel(
+        x: number,
+        y: number,
+        scale: number
+    ): void {
+
         for (let yy = 0; yy < scale; yy++) {
+
             for (let xx = 0; xx < scale; xx++) {
-                setPixelInternal(x + xx, y + yy, true)
+
+                setPixelInternal(
+                    x + xx,
+                    y + yy,
+                    true
+                )
             }
         }
     }
@@ -1463,11 +1402,25 @@ namespace SH1106 {
         scale: number
     ): void {
 
-        for (let row = 0; row < pattern.length; row++) {
-            let line = pattern[row]
+        for (
+            let row = 0;
+            row < pattern.length;
+            row++
+        ) {
 
-            for (let col = 0; col < line.length; col++) {
-                if (line.charAt(col) == "#") {
+            let line =
+                pattern[row]
+
+            for (
+                let col = 0;
+                col < line.length;
+                col++
+            ) {
+
+                if (
+                    line.charAt(col) == "#"
+                ) {
+
                     drawIconPixel(
                         x + col * scale,
                         y + row * scale,
@@ -1580,14 +1533,17 @@ namespace SH1106 {
     ]
 
     // ------------------------------------------------------------
-    // SHOW ICON
+    // SHOW SCALED ICON
     // ------------------------------------------------------------
 
-    //% block="show icon %icon at x %x y %y size %size"
+    /**
+     * Show one of the larger built-in icons.
+     */
+    //% block="show scaled icon %icon at x %x y %y size %size"
     //% x.min=0 x.max=127
     //% y.min=0 y.max=63
     //% weight=20
-    export function showIcon(
+    export function showScaledIcon(
         icon: number,
         x: number,
         y: number,
@@ -1630,12 +1586,18 @@ namespace SH1106 {
             scale = 4
         }
 
-        drawIconPattern(pattern, x, y, scale)
+        drawIconPattern(
+            pattern,
+            x,
+            y,
+            scale
+        )
+
         sendBuffer()
     }
 
     // ------------------------------------------------------------
-    // SIMPLE ICON BLOCKS
+    // SIMPLE SCALED ICON BLOCKS
     // ------------------------------------------------------------
 
     //% block="happy icon at x %x y %y size %size"
@@ -1647,7 +1609,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(0, x, y, size)
+
+        showScaledIcon(
+            0,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="sad icon at x %x y %y size %size"
@@ -1659,7 +1627,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(1, x, y, size)
+
+        showScaledIcon(
+            1,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="angry icon at x %x y %y size %size"
@@ -1671,7 +1645,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(2, x, y, size)
+
+        showScaledIcon(
+            2,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="NO icon at x %x y %y size %size"
@@ -1683,7 +1663,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(3, x, y, size)
+
+        showScaledIcon(
+            3,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="YES icon at x %x y %y size %size"
@@ -1695,7 +1681,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(4, x, y, size)
+
+        showScaledIcon(
+            4,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="heart icon at x %x y %y size %size"
@@ -1707,7 +1699,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(5, x, y, size)
+
+        showScaledIcon(
+            5,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="thermometer icon at x %x y %y size %size"
@@ -1719,7 +1717,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(6, x, y, size)
+
+        showScaledIcon(
+            6,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="snowflake icon at x %x y %y size %size"
@@ -1731,7 +1735,13 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(7, x, y, size)
+
+        showScaledIcon(
+            7,
+            x,
+            y,
+            size
+        )
     }
 
     //% block="cloud icon at x %x y %y size %size"
@@ -1743,135 +1753,17 @@ namespace SH1106 {
         y: number,
         size: IconSize
     ): void {
-        showIcon(8, x, y, size)
+
+        showScaledIcon(
+            8,
+            x,
+            y,
+            size
+        )
     }
 
     // ============================================================
-    // ANIMATION SYSTEM
-    // ============================================================
-
-    const MAX_FRAMES = 4
-
-    let animationFrames: Buffer[] = []
-    let animationRunning = false
-    let animationDelay = 200
-    let animationFrameNumber = 0
-
-    //% block="clear animation frames"
-    //% weight=10
-    export function clearAnimationFrames(): void {
-        animationFrames = []
-        animationFrameNumber = 0
-    }
-
-    //% block="save animation frame"
-    //% weight=9
-    export function animationFrame(): void {
-
-        if (animationFrames.length >= MAX_FRAMES) {
-            return
-        }
-
-        let frame = pins.createBuffer(1024)
-
-        for (let i = 0; i < 1024; i++) {
-            frame[i] = buffer[i]
-        }
-
-        animationFrames.push(frame)
-    }
-
-    //% block="show saved frame"
-    //% weight=8
-    export function showFrame(): void {
-
-        if (animationFrames.length == 0) {
-            return
-        }
-
-        if (animationFrameNumber >= animationFrames.length) {
-            animationFrameNumber = 0
-        }
-
-        let frame = animationFrames[animationFrameNumber]
-
-        for (let i = 0; i < 1024; i++) {
-            buffer[i] = frame[i]
-        }
-
-        sendBuffer()
-    }
-
-    //% block="animation delay %milliseconds ms"
-    //% milliseconds.min=20 milliseconds.max=3000
-    //% weight=7
-    export function animationDelayMs(milliseconds: number): void {
-
-        if (milliseconds < 20) {
-            milliseconds = 20
-        }
-
-        if (milliseconds > 3000) {
-            milliseconds = 3000
-        }
-
-        animationDelay = milliseconds
-    }
-
-    //% block="start animation"
-    //% weight=6
-    export function startAnimation(): void {
-
-        if (animationRunning) {
-            return
-        }
-
-        if (animationFrames.length == 0) {
-            return
-        }
-
-        animationRunning = true
-
-        control.inBackground(() => {
-
-            while (animationRunning) {
-
-                if (animationFrames.length == 0) {
-                    animationRunning = false
-                    break
-                }
-
-                if (animationFrameNumber >= animationFrames.length) {
-                    animationFrameNumber = 0
-                }
-
-                let frame = animationFrames[animationFrameNumber]
-
-                for (let i = 0; i < 1024; i++) {
-                    buffer[i] = frame[i]
-                }
-
-                sendBuffer()
-
-                animationFrameNumber++
-
-                if (animationFrameNumber >= animationFrames.length) {
-                    animationFrameNumber = 0
-                }
-
-                basic.pause(animationDelay)
-            }
-        })
-    }
-
-    //% block="stop animation"
-    //% weight=5
-    export function stopAnimation(): void {
-        animationRunning = false
-    }
-
-    // ============================================================
-    // RAINFALL ANIMATION
+    // RAINFALL
     // ============================================================
 
     //% block="show rainfall"
@@ -1880,20 +1772,38 @@ namespace SH1106 {
 
         clear()
 
-        // cloud
-        drawIconPattern(CLOUD_ICON, 55, 0, 2)
+        drawIconPattern(
+            CLOUD_ICON,
+            55,
+            0,
+            2
+        )
 
-        // rain drops
-        for (let x = 10; x < 125; x += 18) {
-            let y = Math.randomRange(20, 55)
-            drawLine(x, y, x - 1, y + 5)
+        for (
+            let x = 10;
+            x < 125;
+            x += 18
+        ) {
+
+            let y =
+                Math.randomRange(
+                    20,
+                    55
+                )
+
+            drawLine(
+                x,
+                y,
+                x - 1,
+                y + 5
+            )
         }
 
         sendBuffer()
     }
 
     // ============================================================
-    // SNOWFALL ANIMATION
+    // SNOWFALL
     // ============================================================
 
     //% block="show snowfall"
@@ -1902,12 +1812,28 @@ namespace SH1106 {
 
         clear()
 
-        for (let i = 0; i < 14; i++) {
+        for (
+            let i = 0;
+            i < 14;
+            i++
+        ) {
 
-            let x = Math.randomRange(2, 125)
-            let y = Math.randomRange(2, 61)
+            let x =
+                Math.randomRange(
+                    2,
+                    125
+                )
 
-            drawPixel(x, y)
+            let y =
+                Math.randomRange(
+                    2,
+                    61
+                )
+
+            drawPixel(
+                x,
+                y
+            )
         }
 
         sendBuffer()
@@ -1924,31 +1850,79 @@ namespace SH1106 {
         clear()
 
         // head
-        drawRectangle(48, 15, 30, 25)
+        drawRectangle(
+            48,
+            15,
+            30,
+            25
+        )
 
         // angry eyes
-        drawLine(53, 21, 61, 25)
-        drawLine(69, 25, 77, 21)
+        drawLine(
+            53,
+            21,
+            61,
+            25
+        )
+
+        drawLine(
+            69,
+            25,
+            77,
+            21
+        )
 
         // angry mouth
-        drawLine(57, 33, 69, 33)
-        drawLine(69, 33, 73, 30)
+        drawLine(
+            57,
+            33,
+            69,
+            33
+        )
+
+        drawLine(
+            69,
+            33,
+            73,
+            30
+        )
 
         // nose
-        drawLine(64, 25, 64, 30)
+        drawLine(
+            64,
+            25,
+            64,
+            30
+        )
 
         // body
-        drawRectangle(54, 40, 18, 18)
+        drawRectangle(
+            54,
+            40,
+            18,
+            18
+        )
 
         // air from nose
-        drawLine(78, 27, 86, 27)
-        drawLine(86, 27, 91, 24)
+        drawLine(
+            78,
+            27,
+            86,
+            27
+        )
+
+        drawLine(
+            86,
+            27,
+            91,
+            24
+        )
 
         sendBuffer()
     }
 
     // ============================================================
-    // HEART BEAT
+    // BIG HEART
     // ============================================================
 
     //% block="show big heart"
@@ -1957,7 +1931,12 @@ namespace SH1106 {
 
         clear()
 
-        drawIconPattern(HEART_ICON, 48, 20, 4)
+        drawIconPattern(
+            HEART_ICON,
+            48,
+            20,
+            4
+        )
 
         sendBuffer()
     }
