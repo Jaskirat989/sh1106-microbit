@@ -2018,4 +2018,6 @@ namespace SH1106 {
             size
         )
     }
+
+sendBuffur()
 }
