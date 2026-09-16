@@ -2018,3 +2018,4 @@ namespace SH1106 {
             size
         )
     }
+}
