@@ -2019,5 +2019,5 @@ namespace SH1106 {
         )
     }
 
-sendBuffur()
+    sendBuffur()
 }
