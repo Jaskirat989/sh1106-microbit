@@ -1941,3 +1941,840 @@ namespace SH1106 {
         sendBuffer()
     }
 }
+# ------------------------------------------------------------
+# FIX FILLED CIRCLE
+# ------------------------------------------------------------
+
+old_circle = '''    export function fillCircle(
+        x: number,
+        y: number,
+        radius: number
+    ): void {
+
+        if (radius < 1) {
+            return
+        }
+
+        for (
+            let yy = -radius;
+            yy <= radius;
+            yy++
+        ) {
+            let inside =
+                radius * radius -
+                yy * yy
+
+            let xx =
+                Math.sqrt(inside)
+
+            drawLine(
+                x - xx,
+                y + yy,
+                x + xx,
+                y + yy
+            )
+        }
+    }'''
+
+new_circle = '''    export function fillCircle(
+        x: number,
+        y: number,
+        radius: number
+    ): void {
+
+        if (radius < 1) {
+            return
+        }
+
+        for (let yy = -radius; yy <= radius; yy++) {
+
+            let inside =
+                radius * radius -
+                yy * yy
+
+            let span =
+                Math.floor(Math.sqrt(inside))
+
+            for (let xx = -span; xx <= span; xx++) {
+                setPixelInternal(
+                    x + xx,
+                    y + yy,
+                    true
+                )
+            }
+        }
+    }'''
+
+if old_circle in text:
+    text = text.replace(old_circle, new_circle)
+else:
+    print("WARNING: old fillCircle code was not found.")
+
+# ------------------------------------------------------------
+# FIX FILLED TRIANGLE
+# ------------------------------------------------------------
+
+start = text.find("    export function fillTriangle(")
+
+if start != -1:
+    end = text.find("\n    // ------------------------------------------------------------", start)
+
+    if end != -1:
+        old_triangle = text[start:end]
+
+        new_triangle = '''    export function fillTriangle(
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        x3: number,
+        y3: number
+    ): void {
+
+        let minX = Math.min(x1, Math.min(x2, x3))
+        let maxX = Math.max(x1, Math.max(x2, x3))
+        let minY = Math.min(y1, Math.min(y2, y3))
+        let maxY = Math.max(y1, Math.max(y2, y3))
+
+        let area =
+            (x2 - x1) * (y3 - y1) -
+            (y2 - y1) * (x3 - x1)
+
+        if (area == 0) {
+            return
+        }
+
+        for (let y = minY; y <= maxY; y++) {
+
+            for (let x = minX; x <= maxX; x++) {
+
+                let a =
+                    (x2 - x1) * (y - y1) -
+                    (y2 - y1) * (x - x1)
+
+                let b =
+                    (x3 - x2) * (y - y2) -
+                    (y3 - y2) * (x - x2)
+
+                let c =
+                    (x1 - x3) * (y - y3) -
+                    (y1 - y3) * (x - x3)
+
+                if (
+                    (a >= 0 && b >= 0 && c >= 0) ||
+                    (a <= 0 && b <= 0 && c <= 0)
+                ) {
+                    setPixelInternal(
+                        x,
+                        y,
+                        true
+                    )
+                }
+            }
+        }
+    }'''
+
+        text = text[:start] + new_triangle + text[end:]
+    else:
+        print("WARNING: could not find end of fillTriangle.")
+
+# ------------------------------------------------------------
+# NEW FEATURES
+# Insert immediately before final namespace closing brace.
+# ------------------------------------------------------------
+
+features = r'''
+
+    // ============================================================
+    // OLED POWER / DISPLAY CONTROL
+    // ============================================================
+
+    /**
+     * Turn the OLED on.
+     */
+    //% block="OLED on"
+    //% weight=100
+    export function on(): void {
+        command(0xAF)
+    }
+
+    /**
+     * Turn the OLED off.
+     */
+    //% block="OLED off"
+    //% weight=99
+    export function off(): void {
+        command(0xAE)
+    }
+
+    /**
+     * Force the current framebuffer onto the OLED.
+     */
+    //% block="draw OLED"
+    //% weight=98
+    export function draw(): void {
+        sendBuffer()
+    }
+
+    /**
+     * Invert the OLED display.
+     */
+    //% block="invert OLED %d"
+    //% d.defl=true
+    //% weight=97
+    export function invert(d: boolean = true): void {
+        if (d) {
+            command(0xA7)
+        } else {
+            command(0xA6)
+        }
+    }
+
+    /**
+     * Flip the OLED display 180 degrees.
+     */
+    //% block="flip mode %d"
+    //% d.defl=true
+    //% weight=96
+    export function flipMode(d: boolean = true): void {
+        if (d) {
+            command(0xA0)
+            command(0xC0)
+        } else {
+            command(0xA1)
+            command(0xC8)
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // NUMBER
+    // ============================================================
+
+    /**
+     * Show a number at a position.
+     */
+    //% block="show number x %x y %y number %num"
+    //% x.min=0 x.max=127
+    //% y.min=0 y.max=63
+    //% weight=94
+    export function showNumber(
+        x: number,
+        y: number,
+        num: number
+    ): void {
+
+        showText(
+            num.toString(),
+            x,
+            y
+        )
+    }
+
+    // ============================================================
+    // ZOOM
+    // ============================================================
+
+    /**
+     * Double the current framebuffer.
+     */
+    //% block="zoom OLED %d"
+    //% d.defl=true
+    //% weight=93
+    export function zoom(d: boolean = true): void {
+
+        if (!d) {
+            return
+        }
+
+        let oldBuffer = pins.createBuffer(1024)
+
+        for (let i = 0; i < 1024; i++) {
+            oldBuffer[i] = buffer[i]
+        }
+
+        for (let i = 0; i < 1024; i++) {
+            buffer[i] = 0
+        }
+
+        for (let y = 0; y < 32; y++) {
+
+            for (let x = 0; x < 64; x++) {
+
+                let oldX = x
+                let oldY = y
+
+                let index =
+                    oldX +
+                    ((oldY >> 3) * WIDTH)
+
+                let mask =
+                    1 << (oldY & 7)
+
+                if ((oldBuffer[index] & mask) != 0) {
+
+                    let newX = x * 2
+                    let newY = y * 2
+
+                    setPixelInternal(
+                        newX,
+                        newY,
+                        true
+                    )
+
+                    setPixelInternal(
+                        newX + 1,
+                        newY,
+                        true
+                    )
+
+                    setPixelInternal(
+                        newX,
+                        newY + 1,
+                        true
+                    )
+
+                    setPixelInternal(
+                        newX + 1,
+                        newY + 1,
+                        true
+                    )
+                }
+            }
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // BORDER
+    // ============================================================
+
+    /**
+     * Add or remove a border around the OLED.
+     */
+    //% block="borders %d"
+    //% d.defl=true
+    //% weight=92
+    export function borders(d: boolean = true): void {
+
+        if (d) {
+            drawRectangle(
+                0,
+                0,
+                128,
+                64
+            )
+        } else {
+            for (let x = 0; x < 128; x++) {
+                setPixelInternal(x, 0, false)
+                setPixelInternal(x, 63, false)
+            }
+
+            for (let y = 0; y < 64; y++) {
+                setPixelInternal(0, y, false)
+                setPixelInternal(127, y, false)
+            }
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // LOADING BAR
+    // ============================================================
+
+    /**
+     * Show a 0-100 percent loading bar.
+     */
+    //% block="loading bar %percent percent"
+    //% percent.min=0 percent.max=100 percent.defl=50
+    //% weight=91
+    export function loadingBar(
+        percent: number
+    ): void {
+
+        if (percent < 0) {
+            percent = 0
+        }
+
+        if (percent > 100) {
+            percent = 100
+        }
+
+        let barX = 8
+        let barY = 28
+        let barWidth = 112
+        let barHeight = 12
+
+        drawRectangle(
+            barX,
+            barY,
+            barWidth,
+            barHeight
+        )
+
+        let insideWidth =
+            barWidth - 4
+
+        let filled =
+            Math.floor(
+                insideWidth * percent / 100
+            )
+
+        if (filled > 0) {
+            fillRectangle(
+                barX + 2,
+                barY + 2,
+                filled,
+                barHeight - 4
+            )
+        }
+
+        showText(
+            percent.toString() + "%",
+            52,
+            10
+        )
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // SCROLLING
+    // ============================================================
+
+    /**
+     * Scroll the framebuffer upward.
+     */
+    //% block="scroll up"
+    //% weight=90
+    export function scrollUp(): void {
+
+        for (let y = 0; y < 63; y++) {
+            for (let x = 0; x < 128; x++) {
+                setPixelInternal(
+                    x,
+                    y,
+                    getPixel(x, y + 1)
+                )
+            }
+        }
+
+        for (let x = 0; x < 128; x++) {
+            setPixelInternal(
+                x,
+                63,
+                false
+            )
+        }
+
+        sendBuffer()
+    }
+
+    /**
+     * Scroll the framebuffer downward.
+     */
+    //% block="scroll down"
+    //% weight=89
+    export function scrollDown(): void {
+
+        for (let y = 63; y > 0; y--) {
+            for (let x = 0; x < 128; x++) {
+                setPixelInternal(
+                    x,
+                    y,
+                    getPixel(x, y - 1)
+                )
+            }
+        }
+
+        for (let x = 0; x < 128; x++) {
+            setPixelInternal(
+                x,
+                0,
+                false
+            )
+        }
+
+        sendBuffer()
+    }
+
+    /**
+     * Scroll the framebuffer left.
+     */
+    //% block="scroll left"
+    //% weight=88
+    export function scrollLeft(): void {
+
+        for (let y = 0; y < 64; y++) {
+
+            for (let x = 0; x < 127; x++) {
+                setPixelInternal(
+                    x,
+                    y,
+                    getPixel(x + 1, y)
+                )
+            }
+
+            setPixelInternal(
+                127,
+                y,
+                false
+            )
+        }
+
+        sendBuffer()
+    }
+
+    /**
+     * Scroll the framebuffer right.
+     */
+    //% block="scroll right"
+    //% weight=87
+    export function scrollRight(): void {
+
+        for (let y = 0; y < 64; y++) {
+
+            for (let x = 127; x > 0; x--) {
+                setPixelInternal(
+                    x,
+                    y,
+                    getPixel(x - 1, y)
+                )
+            }
+
+            setPixelInternal(
+                0,
+                y,
+                false
+            )
+        }
+
+        sendBuffer()
+    }
+
+    // ============================================================
+    // BUILT-IN ANIMATIONS
+    // ============================================================
+
+    /**
+     * Play a smoke animation.
+     */
+    //% block="smoke animation"
+    //% weight=40
+    export function smokeAnimation(): void {
+
+        for (let frame = 0; frame < 4; frame++) {
+
+            clear()
+
+            if (frame == 0) {
+                fillCircle(62, 42, 4)
+            }
+
+            if (frame == 1) {
+                fillCircle(62, 34, 5)
+                drawPixel(68, 29)
+            }
+
+            if (frame == 2) {
+                fillCircle(58, 25, 5)
+                fillCircle(68, 20, 3)
+            }
+
+            if (frame == 3) {
+                fillCircle(52, 16, 4)
+                fillCircle(65, 9, 3)
+            }
+
+            sendBuffer()
+            basic.pause(120)
+        }
+    }
+
+    /**
+     * Play a beating heart animation.
+     */
+    //% block="heart beating animation"
+    //% weight=39
+    export function heartBeatingAnimation(): void {
+
+        clear()
+        showScaledIcon(
+            5,
+            40,
+            16,
+            IconSize.Large
+        )
+        sendBuffer()
+        basic.pause(180)
+
+        clear()
+        showScaledIcon(
+            5,
+            32,
+            8,
+            IconSize.Large
+        )
+        sendBuffer()
+        basic.pause(180)
+
+        clear()
+        showScaledIcon(
+            5,
+            40,
+            16,
+            IconSize.Large
+        )
+        sendBuffer()
+    }
+
+    /**
+     * Play an angry animation.
+     */
+    //% block="angry animation"
+    //% weight=38
+    export function angryAnimation(): void {
+
+        clear()
+        angryIcon(
+            52,
+            20,
+            IconSize.Medium
+        )
+        basic.pause(150)
+
+        clear()
+        drawLine(40, 18, 48, 14)
+        drawLine(80, 14, 88, 18)
+        angryIcon(
+            52,
+            20,
+            IconSize.Medium
+        )
+        basic.pause(150)
+
+        clear()
+        drawLine(36, 20, 48, 14)
+        drawLine(80, 14, 92, 20)
+        angryIcon(
+            52,
+            20,
+            IconSize.Medium
+        )
+        sendBuffer()
+    }
+
+    /**
+     * Play a sleeping animation.
+     */
+    //% block="sleeping animation"
+    //% weight=37
+    export function sleepingAnimation(): void {
+
+        clear()
+        showText("Z", 92, 12)
+        showText("z", 104, 4)
+        showText("z", 112, 0)
+        sendBuffer()
+        basic.pause(350)
+
+        clear()
+        showText("Z", 96, 8)
+        showText("z", 108, 0)
+        sendBuffer()
+        basic.pause(350)
+
+        clear()
+        showText("Z", 100, 4)
+        sendBuffer()
+    }
+
+    /**
+     * Play a rain animation.
+     */
+    //% block="rain animation"
+    //% weight=36
+    export function rainAnimation(): void {
+
+        for (let frame = 0; frame < 4; frame++) {
+
+            clear()
+
+            drawIconPattern(
+                CLOUD_ICON,
+                52,
+                2,
+                2
+            )
+
+            for (let x = 8; x < 125; x += 18) {
+                let y = 25 + ((x + frame * 6) % 30)
+
+                drawLine(
+                    x,
+                    y,
+                    x - 1,
+                    y + 5
+                )
+            }
+
+            sendBuffer()
+            basic.pause(120)
+        }
+    }
+
+    /**
+     * Play a snowfall animation.
+     */
+    //% block="snow animation"
+    //% weight=35
+    export function snowAnimation(): void {
+
+        for (let frame = 0; frame < 5; frame++) {
+
+            clear()
+
+            for (let i = 0; i < 16; i++) {
+
+                let x =
+                    (i * 17 + frame * 3) % 126
+
+                let y =
+                    (i * 11 + frame * 5) % 62
+
+                drawPixel(
+                    x,
+                    y
+                )
+            }
+
+            sendBuffer()
+            basic.pause(130)
+        }
+    }
+
+    /**
+     * Play an explosion animation.
+     */
+    //% block="explosion animation"
+    //% weight=34
+    export function explosionAnimation(): void {
+
+        clear()
+        fillCircle(64, 32, 3)
+        sendBuffer()
+        basic.pause(100)
+
+        clear()
+        drawCircle(64, 32, 8)
+        drawLine(64, 18, 64, 10)
+        drawLine(64, 46, 64, 54)
+        drawLine(50, 32, 42, 32)
+        drawLine(78, 32, 86, 32)
+        sendBuffer()
+        basic.pause(100)
+
+        clear()
+        drawCircle(64, 32, 15)
+        drawLine(64, 8, 64, 2)
+        drawLine(64, 56, 64, 62)
+        drawLine(40, 32, 32, 32)
+        drawLine(88, 32, 96, 32)
+        drawLine(48, 16, 42, 10)
+        drawLine(80, 16, 86, 10)
+        drawLine(48, 48, 42, 54)
+        drawLine(80, 48, 86, 54)
+        sendBuffer()
+    }
+
+    /**
+     * Play a fire animation.
+     */
+    //% block="fire animation"
+    //% weight=33
+    export function fireAnimation(): void {
+
+        for (let frame = 0; frame < 4; frame++) {
+
+            clear()
+
+            fillCircle(
+                64,
+                48,
+                12
+            )
+
+            drawTriangle(
+                52,
+                48,
+                64,
+                12 - frame * 2,
+                76,
+                48
+            )
+
+            if (frame % 2 == 0) {
+                fillCircle(64, 42, 6)
+            } else {
+                fillCircle(60, 40, 5)
+            }
+
+            sendBuffer()
+            basic.pause(120)
+        }
+    }
+
+    /**
+     * Play a moving arrow animation.
+     */
+    //% block="moving arrow animation"
+    //% weight=32
+    export function movingArrowAnimation(): void {
+
+        for (let x = 8; x <= 104; x += 16) {
+
+            clear()
+
+            drawLine(
+                x,
+                32,
+                x + 20,
+                32
+            )
+
+            drawLine(
+                x + 20,
+                32,
+                x + 12,
+                24
+            )
+
+            drawLine(
+                x + 20,
+                32,
+                x + 12,
+                40
+            )
+
+            sendBuffer()
+            basic.pause(100)
+        }
+    }
+'''
+
+# Insert before the final namespace closing brace.
+last = text.rfind("\n}")
+if last == -1:
+    raise SystemExit("Could not find final namespace closing brace.")
+
+# Avoid accidental duplicate installation.
+if "export function smokeAnimation()" in text:
+    print("New features already appear to be installed. No changes made.")
+else:
+    text = text[:last] + features + text[last:]
+    p.write_text(text, encoding="utf-8")
+    print("BIG UPGRADE INSTALLED.")
+    print("main.ts updated successfully.")
