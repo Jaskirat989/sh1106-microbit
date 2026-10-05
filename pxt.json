@@ -1,6 +1,6 @@
 {
     "name": "sh1106-extension",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "SH1106 OLED driver for micro:bit",
     "license": "MIT",
     "dependencies": {
