@@ -1941,6 +1941,23 @@ namespace SH1106 {
 
         sendBuffer()
     }
-}
 
  
+    //% block="OLED on"
+    //% weight=80
+    export function on(): void {
+        command(0xAF)
+    }
+
+    //% block="OLED off"
+    //% weight=79
+    export function off(): void {
+        command(0xAE)
+    }
+
+    //% block="force redraw OLED"
+    //% weight=78
+    export function draw(): void {
+        sendBuffer()
+    }
+}
